@@ -6,5 +6,5 @@ export const skills = {
     "AI/ML foundations",
     "Distributed & embedded systems",
   ],
-  tools: ["Arduino", "Raspberry Pi", "LoRaWAN", "Radio", "Linux", "Agile"],
+  tools: ["Arduino", "Raspberry Pi", "LoRaWAN", "Linux", "Agile", "GitHub"],
 };
