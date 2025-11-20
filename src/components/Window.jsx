@@ -1,11 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useOS } from '../context/OSContext';
+import { systemSounds } from '../utils/sounds';
 import Terminal from './apps/Terminal';
 import FileExplorer from './apps/FileExplorer';
 import SystemMonitor from './apps/SystemMonitor';
 import UserProfile from './apps/UserProfile';
 import Contact from './apps/Contact';
 import Properties from './apps/Properties';
+import Settings from './apps/Settings';
+import SnakeGame from './games/SnakeGame';
+import Game2048 from './games/Game2048';
+import TicTacToe from './games/TicTacToe';
+import MazeGame from './games/MazeGame';
 
 const ResizeHandle = ({ cursor, top, bottom, left, right, width, height, onMouseDown }) => (
   <div
@@ -47,16 +53,58 @@ const ControlBtn = ({ onClick, icon, color, isClose, title }) => (
 );
 
 const Window = ({ win }) => {
-  const { closeApp, minimizeApp, maximizeApp, focusApp } = useOS();
+  const { windows, focusApp, closeApp, minimizeApp, maximizeApp, activeId, themeConfig, soundEnabled, snapState, setSnapState } = useOS();
   const [pos, setPos] = useState({ x: win.x, y: win.y, w: win.width, h: win.height });
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
-  const [resizeDir, setResizeDir] = useState(null); // 'n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'
-
-  // Used to temporarily disable transitions during the "snap" frame
+  const [resizeDir, setResizeDir] = useState('');
+  const [dragOffsetState, setDragOffsetState] = useState({ x: 0, y: 0 }); // Renamed to avoid conflict
   const [isSnapping, setIsSnapping] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [animationType, setAnimationType] = useState(''); // 'minimize', 'maximize', 'close'
 
   const dragOffset = useRef({ x: 0, y: 0, w: 0, h: 0, startX: 0, startY: 0 });
+
+  const focusWindow = (e) => {
+    e.stopPropagation();
+    focusApp(win.id);
+  };
+
+  const handleClose = (e) => {
+    e.stopPropagation();
+    if (soundEnabled) systemSounds.windowClose();
+    setAnimationType('close');
+    setIsAnimating(true);
+    setTimeout(() => {
+      closeApp(win.id);
+    }, 250);
+  };
+
+  const handleMinimize = (e) => {
+    e.stopPropagation();
+    if (soundEnabled) systemSounds.click();
+    setAnimationType('minimize');
+    setIsAnimating(true);
+    // Minimize instantly - no delay
+    minimizeApp(win.id);
+    // Clean up animation state after it finishes
+    setTimeout(() => {
+      setIsAnimating(false);
+    }, 150);
+  };
+
+  const handleMaximize = (e) => {
+    e.stopPropagation();
+    if (soundEnabled) systemSounds.click();
+    if (!win.maximized) {
+      setAnimationType('maximize');
+      setIsAnimating(true);
+      setTimeout(() => {
+        setIsAnimating(false);
+      }, 300);
+    }
+    maximizeApp(win.id);
+  };
 
   // --- DRAG LOGIC (With Animated Snap-to-Restore) ---
   const handleMouseDown = (e) => {
@@ -117,12 +165,46 @@ const Window = ({ win }) => {
   useEffect(() => {
     const handleMouseMove = (e) => {
       if (isDragging) {
-        // Update position based on mouse
-        setPos(prev => ({
-          ...prev,
-          x: e.clientX - dragOffset.current.x,
-          y: e.clientY - dragOffset.current.y
-        }));
+        const newX = e.clientX - dragOffset.current.x;
+        const newY = Math.max(0, e.clientY - dragOffset.current.y);
+
+        // Enhanced snap detection zones
+        const snapZone = 50;
+        const cornerZone = 100; // Larger zone for corners
+        const screenWidth = window.innerWidth;
+        const screenHeight = window.innerHeight - 70; // Account for taskbar
+
+        let snapState = null;
+
+        // Corner detection (priority over edge detection)
+        if (e.clientX < cornerZone && e.clientY < cornerZone) {
+          snapState = 'top-left';
+        } else if (e.clientX > screenWidth - cornerZone && e.clientY < cornerZone) {
+          snapState = 'top-right';
+        } else if (e.clientX < cornerZone && e.clientY > screenHeight - cornerZone + 70) {
+          snapState = 'bottom-left';
+        } else if (e.clientX > screenWidth - cornerZone && e.clientY > screenHeight - cornerZone + 70) {
+          snapState = 'bottom-right';
+        }
+        // Edge detection
+        else if (e.clientX < snapZone) {
+          snapState = 'left';
+        } else if (e.clientX > screenWidth - snapZone) {
+          snapState = 'right';
+        } else if (e.clientY < snapZone) {
+          snapState = 'top';
+        }
+
+        // Update global snap state for preview
+        setSnapState(snapState);
+
+        if (snapState) {
+          setIsSnapping(true);
+        } else {
+          setIsSnapping(false);
+        }
+
+        setPos(prev => ({ ...prev, x: newX, y: newY }));
       }
       if (isResizing && resizeDir) {
         const deltaX = e.clientX - dragOffset.current.startX;
@@ -162,6 +244,85 @@ const Window = ({ win }) => {
     };
 
     const handleMouseUp = () => {
+      // Apply snap if dragging and in snap state
+      // Use the global snapState from context (we need to access it via the hook, but we can't access the latest state inside the closure easily without a ref or checking the value)
+      // Actually, since handleMouseUp is defined inside the effect which has [isDragging, isResizing, resizeDir] deps, but NOT snapState, it might be stale.
+      // However, we can check the local 'isSnapping' or just trust the context if we include it in deps.
+      // BETTER: We can just check the LAST set snapState.
+      // But wait, 'snapState' from context is a value.
+
+      // Let's use a ref to track the current snap state locally to avoid dependency issues, 
+      // OR just rely on the fact that we set it.
+      // Actually, we can just pass the calculated snapState to the mouseUp handler if we refactor, 
+      // but here we are in a closure.
+
+      // SIMPLER FIX: Re-calculate the snap state in mouseUp? No, that's redundant.
+      // Let's assume we can access the latest snapState if we add it to the useEffect dependency array.
+      // But adding it to dependency array will re-attach listeners on every mouse move (if snapState changes).
+      // That's fine, snapState only changes when entering/leaving zones.
+
+      if (isDragging && snapState) {
+        const screenWidth = window.innerWidth;
+        const screenHeight = window.innerHeight - 70;
+        const snapType = snapState;
+
+        // Clear snap state IMMEDIATELY to hide preview
+        setSnapState(null);
+        setIsSnapping(false);
+
+        // Apply the snap based on type
+        switch (snapType) {
+          case 'left':
+            // Ensure window is not maximized first
+            if (win.maximized) {
+              maximizeApp(win.id); // Toggle to un-maximize
+            }
+            setPos({ x: 0, y: 0, w: screenWidth / 2, h: screenHeight });
+            break;
+          case 'right':
+            if (win.maximized) {
+              maximizeApp(win.id);
+            }
+            setPos({ x: screenWidth / 2, y: 0, w: screenWidth / 2, h: screenHeight });
+            break;
+          case 'top':
+            // Only maximize if not already maximized
+            if (!win.maximized) {
+              maximizeApp(win.id);
+            }
+            break;
+          case 'top-left':
+            if (win.maximized) {
+              maximizeApp(win.id);
+            }
+            setPos({ x: 0, y: 0, w: screenWidth / 2, h: screenHeight / 2 });
+            break;
+          case 'top-right':
+            if (win.maximized) {
+              maximizeApp(win.id);
+            }
+            setPos({ x: screenWidth / 2, y: 0, w: screenWidth / 2, h: screenHeight / 2 });
+            break;
+          case 'bottom-left':
+            if (win.maximized) {
+              maximizeApp(win.id);
+            }
+            setPos({ x: 0, y: screenHeight / 2, w: screenWidth / 2, h: screenHeight / 2 });
+            break;
+          case 'bottom-right':
+            if (win.maximized) {
+              maximizeApp(win.id);
+            }
+            setPos({ x: screenWidth / 2, y: screenHeight / 2, w: screenWidth / 2, h: screenHeight / 2 });
+            break;
+        }
+      } else {
+        // Clear snap state even if not snapping
+        if (win.snapState) {
+          win.snapState = null;
+        }
+      }
+
       setIsDragging(false);
       setIsResizing(false);
       setResizeDir(null);
@@ -176,7 +337,7 @@ const Window = ({ win }) => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, isResizing, resizeDir]);
+  }, [isDragging, isResizing, resizeDir, snapState]);
 
   const renderContent = () => {
     switch (win.type) {
@@ -186,7 +347,18 @@ const Window = ({ win }) => {
       case 'profile': return <UserProfile />;
       case 'contact': return <Contact />;
       case 'properties': return <Properties />;
-      default: return win.content;
+      case 'settings':
+        return <Settings initialTab={win.initialTab} />;
+      case 'game_snake':
+        return <SnakeGame />;
+      case 'game_2048':
+        return <Game2048 />;
+      case 'game_tictactoe':
+        return <TicTacToe />;
+      case 'game_maze':
+        return <MazeGame />;
+      default:
+        return win.content;
     }
   };
 
@@ -208,7 +380,12 @@ const Window = ({ win }) => {
     if (isResizing) {
       return {
         top: pos.y, left: pos.x, width: pos.w, height: pos.h,
-        borderRadius: 'var(--radius)', border: '1px solid var(--glass-border)',
+        borderRadius: 'var(--radius)',
+        border: '1px solid var(--glass-border)',
+        boxShadow: '0 25px 50px rgba(0,0,0,0.5)',
+        overflow: 'hidden',
+        background: `rgba(28, 28, 30, ${themeConfig.windowOpacity || 0.95})`,
+        backdropFilter: 'blur(20px)',
         transition: 'none'
       };
     }
@@ -234,14 +411,17 @@ const Window = ({ win }) => {
 
   return (
     <div
-      className="window window-opening"
+      className={`window window-opening ${isAnimating ? `window-${animationType}` : ''}`}
       style={{
         position: 'absolute',
-        backgroundColor: 'var(--glass-bg)',
+        background: `rgba(28, 28, 30, ${themeConfig.windowOpacity || 0.95})`,
         backdropFilter: 'blur(20px)',
         boxShadow: '0 30px 60px rgba(0,0,0,0.5)',
-        display: 'flex', flexDirection: 'column', overflow: 'hidden',
+        display: win.minimized && !isAnimating ? 'none' : 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
         zIndex: win.zIndex,
+        fontSize: 'var(--base-font-size, 14px)',
         ...getStyles()
       }}
       onMouseDown={() => focusApp(win.id)}
@@ -252,16 +432,17 @@ const Window = ({ win }) => {
       <div
         className="win-header"
         style={{
-          height: '38px', background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center',
+          height: '38px', background: 'var(--os-theme-card-bg, rgba(0,0,0,0.4))', display: 'flex', alignItems: 'center',
           justifyContent: 'space-between', padding: '0 10px', flexShrink: 0,
           borderBottom: '1px solid rgba(255,255,255,0.05)',
           cursor: 'default',
-          userSelect: 'none'
+          userSelect: 'none',
+          transition: 'background 0.5s ease'
         }}
         onMouseDown={handleMouseDown}
         onDoubleClick={() => maximizeApp(win.id)}
       >
-        <div style={{ fontSize: '13px', color: '#ddd', fontWeight: 600, letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ fontSize: '13px', color: 'var(--os-theme-text, #ddd)', fontWeight: 600, letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '8px', transition: 'color 0.5s ease' }}>
           <img src={win.icon} alt="" width="14" />
           {win.title}
         </div>
@@ -271,9 +452,9 @@ const Window = ({ win }) => {
           style={{ display: 'flex', gap: '6px' }}
           onMouseDown={(e) => e.stopPropagation()}
         >
-          <ControlBtn onClick={() => minimizeApp(win.id)} color="#f1c40f" icon="M6,12 L18,12" title="Minimize" />
+          <ControlBtn onClick={handleMinimize} color="#f1c40f" icon="M6,12 L18,12" title="Minimize" />
           <ControlBtn
-            onClick={() => maximizeApp(win.id)}
+            onClick={handleMaximize}
             color="#2ecc71"
             icon={win.maximized
               ? "M6,8 L6,18 L16,18 L16,8 Z M8,6 L18,6 L18,16"

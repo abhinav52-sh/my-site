@@ -24,7 +24,7 @@ export const fileSystem = {
     height: 600,
     type: "profile"
   },
-  
+
   contact: {
     title: "Contact Me",
     // Bright Blue/White Mail Icon
@@ -60,7 +60,53 @@ export const fileSystem = {
     height: 350,
     type: "terminal"
   },
-  
+
+  properties: {
+    title: "Properties",
+    icon: "https://cdn-icons-png.flaticon.com/512/3767/3767084.png",
+    width: 350,
+    height: 450,
+    type: "properties"
+  },
+
+  settings: {
+    title: "Settings",
+    icon: "https://img.icons8.com/fluency/96/settings.png",
+    width: 700,
+    height: 500,
+    type: "settings"
+  },
+
+  // --- Games ---
+  game_snake: {
+    title: "Snake",
+    icon: "https://cdn-icons-png.flaticon.com/512/528/528076.png",
+    width: 600,
+    height: 500,
+    type: "game_snake"
+  },
+  game_2048: {
+    title: "2048",
+    icon: "https://cdn-icons-png.flaticon.com/512/3064/3064155.png",
+    width: 500,
+    height: 600,
+    type: "game_2048"
+  },
+  game_tictactoe: {
+    title: "Tic Tac Toe",
+    icon: "https://cdn-icons-png.flaticon.com/512/393/393060.png",
+    width: 400,
+    height: 500,
+    type: "game_tictactoe"
+  },
+  game_maze: {
+    title: "Maze Runner",
+    icon: "https://cdn-icons-png.flaticon.com/512/2541/2541991.png",
+    width: 600,
+    height: 500,
+    type: "game_maze"
+  },
+
   // --- Projects ---
   proj_helmet: {
     title: "Smart Helmet",
@@ -68,7 +114,7 @@ export const fileSystem = {
     width: 450,
     height: 500,
     content: (
-      <ProjectLayout 
+      <ProjectLayout
         img="https://images.unsplash.com/photo-1558346490-a72e53ae2d4f?q=80&w=1000&auto=format&fit=crop"
         title="Smart LoRaWAN Helmet"
         date="Aug 2024 - Sep 2024"
@@ -83,7 +129,7 @@ export const fileSystem = {
     width: 450,
     height: 500,
     content: (
-      <ProjectLayout 
+      <ProjectLayout
         img="https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=1000&auto=format&fit=crop"
         title="Web Dev Team Lead"
         date="Capstone Project"
@@ -98,7 +144,7 @@ export const fileSystem = {
     width: 450,
     height: 500,
     content: (
-      <ProjectLayout 
+      <ProjectLayout
         img="https://images.unsplash.com/photo-1485827404703-89b55fcc595e?q=80&w=1000&auto=format&fit=crop"
         title="Autonomous Robot"
         date="May 2023 - Jun 2023"
@@ -113,7 +159,7 @@ export const fileSystem = {
     width: 450,
     height: 500,
     content: (
-      <ProjectLayout 
+      <ProjectLayout
         img="https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1000&auto=format&fit=crop"
         title="University Platform"
         date="Web Application"

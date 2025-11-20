@@ -46,29 +46,62 @@ const Desktop = () => {
 
     const handleMouseUp = (e) => {
       if (draggingId) {
-        // SNAP TO GRID LOGIC
+        // SNAP TO GRID LOGIC WITH COLLISION DETECTION
         const currentIcon = desktopIcons.find(i => i.id === draggingId);
         if (currentIcon) {
           // Calculate column and row index based on margins
-          const col = Math.round((currentIcon.x - MARGIN_X) / GRID_W);
-          const row = Math.round((currentIcon.y - MARGIN_Y) / GRID_H);
+          let col = Math.round((currentIcon.x - MARGIN_X) / GRID_W);
+          let row = Math.round((currentIcon.y - MARGIN_Y) / GRID_H);
 
           // Calculate snapped position
           let snappedX = (col * GRID_W) + MARGIN_X;
           let snappedY = (row * GRID_H) + MARGIN_Y;
 
           // Boundary Checks
-          // 1. Left/Top edges
           snappedX = Math.max(MARGIN_X, snappedX);
           snappedY = Math.max(MARGIN_Y, snappedY);
-
-          // 2. Right edge
           if (snappedX > window.innerWidth - GRID_W) snappedX = window.innerWidth - GRID_W;
-
-          // 3. Bottom edge (Taskbar Protection)
-          // Taskbar is approx 60px height + 10px margin
           if (snappedY > window.innerHeight - GRID_H - 60) {
             snappedY = window.innerHeight - GRID_H - 60;
+          }
+
+          // Check if position is occupied by another icon
+          const isOccupied = (x, y, excludeId) => {
+            return desktopIcons.some(icon =>
+              icon.id !== excludeId &&
+              Math.abs(icon.x - x) < 10 &&
+              Math.abs(icon.y - y) < 10
+            );
+          };
+
+          // If occupied, find nearest free position
+          if (isOccupied(snappedX, snappedY, draggingId)) {
+            let found = false;
+            let searchRadius = 1;
+
+            // Search in expanding spiral pattern
+            while (!found && searchRadius < 20) {
+              for (let dy = -searchRadius; dy <= searchRadius && !found; dy++) {
+                for (let dx = -searchRadius; dx <= searchRadius && !found; dx++) {
+                  if (Math.abs(dx) === searchRadius || Math.abs(dy) === searchRadius) {
+                    const testX = ((col + dx) * GRID_W) + MARGIN_X;
+                    const testY = ((row + dy) * GRID_H) + MARGIN_Y;
+
+                    // Check boundaries
+                    if (testX >= MARGIN_X &&
+                      testX <= window.innerWidth - GRID_W &&
+                      testY >= MARGIN_Y &&
+                      testY <= window.innerHeight - GRID_H - 60 &&
+                      !isOccupied(testX, testY, draggingId)) {
+                      snappedX = testX;
+                      snappedY = testY;
+                      found = true;
+                    }
+                  }
+                }
+              }
+              searchRadius++;
+            }
           }
 
           // Commit Snap
@@ -101,12 +134,20 @@ const Desktop = () => {
 
   return (
     // Changed from Grid to Relative for absolute positioning
-    <div style={{ position: 'relative', width: '100%', height: 'calc(100vh - 50px)', overflow: 'hidden' }}>
+    <div
+      style={{
+        position: 'relative',
+        width: '100%',
+        height: 'calc(100vh - 50px)',
+        overflow: 'hidden'
+      }}
+    >
       {desktopIcons
         .filter(icon => !hiddenApps.includes(icon.id))
         .map(icon => (
           <div
             key={icon.id}
+            className="desktop-icon"
             onMouseDown={(e) => handleMouseDown(e, icon.id, icon.x, icon.y)}
             onClick={() => handleClick(icon.id)}
             data-context="icon"
@@ -121,7 +162,6 @@ const Desktop = () => {
               transition: draggingId === icon.id ? 'none' : 'top 0.2s cubic-bezier(0.25, 1, 0.5, 1), left 0.2s cubic-bezier(0.25, 1, 0.5, 1)',
               zIndex: draggingId === icon.id ? 999 : 1, // Bring to front while dragging
             }}
-            className="d-icon"
             onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
             onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
           >
