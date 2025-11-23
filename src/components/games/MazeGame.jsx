@@ -202,9 +202,9 @@ const MazeGame = () => {
       flexDirection: 'column',
       alignItems: 'center',
       padding: '20px',
-      background: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
+      background: 'transparent',
       height: '100%',
-      color: '#fff',
+      color: 'var(--os-theme-text)',
       overflowY: 'auto'
     }}>
       <h2 style={{ margin: '0 0 15px 0', fontSize: '24px' }}>Maze Runner</h2>
@@ -215,7 +215,7 @@ const MazeGame = () => {
         marginBottom: '15px',
         fontSize: '14px'
       }}>
-        <div>Time: <span style={{ fontWeight: 'bold', color: '#3daee9' }}>{formatTime(time)}</span></div>
+        <div>Time: <span style={{ fontWeight: 'bold', color: 'var(--os-theme-accent)' }}>{formatTime(time)}</span></div>
         <div>Moves: <span style={{ fontWeight: 'bold', color: '#f1c40f' }}>{moves}</span></div>
         {bestTimes[difficulty] && (
           <div>Best: <span style={{ fontWeight: 'bold', color: '#2ecc71' }}>
@@ -291,7 +291,7 @@ const MazeGame = () => {
 
 const buttonStyle = {
   padding: '10px 20px',
-  background: '#3daee9',
+  background: 'var(--os-theme-accent)',
   color: '#fff',
   border: 'none',
   borderRadius: '6px',

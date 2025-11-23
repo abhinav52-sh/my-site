@@ -148,9 +148,9 @@ const TicTacToe = () => {
       flexDirection: 'column',
       alignItems: 'center',
       padding: '20px',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      background: 'transparent',
       height: '100%',
-      color: '#fff'
+      color: 'var(--os-theme-text)'
     }}>
       <h2 style={{ margin: '0 0 20px 0', fontSize: '24px' }}>Tic-Tac-Toe</h2>
 
@@ -160,7 +160,7 @@ const TicTacToe = () => {
         marginBottom: '20px',
         fontSize: '14px'
       }}>
-        <div>You (X): <span style={{ fontWeight: 'bold', color: '#3daee9' }}>{scores.X}</span></div>
+        <div>You (X): <span style={{ fontWeight: 'bold', color: 'var(--os-theme-accent)' }}>{scores.X}</span></div>
         <div>AI (O): <span style={{ fontWeight: 'bold', color: '#e74c3c' }}>{scores.O}</span></div>
         <div>Draws: <span style={{ fontWeight: 'bold', color: '#f1c40f' }}>{scores.draws}</span></div>
       </div>
@@ -171,7 +171,7 @@ const TicTacToe = () => {
         gridTemplateRows: 'repeat(3, 100px)',
         gap: '8px',
         marginBottom: '20px',
-        background: 'rgba(0,0,0,0.2)',
+        background: 'var(--os-theme-card-bg)',
         padding: '8px',
         borderRadius: '12px'
       }}>
@@ -244,7 +244,7 @@ const TicTacToe = () => {
 
 const buttonStyle = {
   padding: '10px 20px',
-  background: '#3daee9',
+  background: 'var(--os-theme-accent)',
   color: '#fff',
   border: 'none',
   borderRadius: '6px',

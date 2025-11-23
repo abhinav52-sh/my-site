@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useOS } from '../../context/OSContext';
 import { fileSystem } from '../../data/filesystem';
+import { THEMES } from '../../data/themes';
 
 const Terminal = () => {
-  const { openApp, closeApp } = useOS();
+  const { openApp, closeApp, updateOSTheme } = useOS();
   const [history, setHistory] = useState([
     { type: 'output', text: "Welcome to AbhinavOS v5.0\nType 'help' to see available commands or 'ls' to list apps." }
   ]);
@@ -87,23 +88,47 @@ const Terminal = () => {
     return null;
   };
 
-  const commands = ['help', 'ls', 'whoami', 'clear', 'cd', 'snake', '2048', 'tictactoe', 'maze'];
+  const commands = ['help', 'ls', 'whoami', 'clear', 'cd', 'theme', 'snake', '2048', 'tictactoe', 'maze'];
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [history]); // Only scroll on history changes, not when suggestions appear
 
   // Detect if menu should appear above or below based on available space
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0, above: false });
+
   useEffect(() => {
     if (activeSuggestions.length > 0 && inputRef.current && terminalRef.current) {
       const inputRect = inputRef.current.getBoundingClientRect();
       const terminalRect = terminalRef.current.getBoundingClientRect();
       const spaceBelow = terminalRect.bottom - inputRect.bottom;
 
-      // If less than 200px space below, show above
-      setMenuAbove(spaceBelow < 200);
+      // Calculate position relative to terminal container
+      const inputTop = inputRect.top - terminalRect.top;
+      const inputBottom = inputRect.bottom - terminalRect.top;
+      const inputLeft = inputRect.left - terminalRect.left;
+
+      // Calculate text width to position menu after the typed text
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      if (context) {
+        context.font = '14px monospace'; // Match terminal font
+        const promptText = getPrompt() + ' ';
+        const textWidth = context.measureText(promptText + input).width;
+        const leftPosition = Math.max(10, textWidth + 10); // At least 10px from left
+
+        // If less than 200px space below, show above
+        const shouldShowAbove = spaceBelow < 200;
+
+        setMenuAbove(shouldShowAbove);
+        setMenuPosition({
+          top: shouldShowAbove ? inputTop - 10 : inputBottom + 5,
+          left: leftPosition,
+          above: shouldShowAbove
+        });
+      }
     }
-  }, [activeSuggestions]);
+  }, [activeSuggestions, input]);
 
   // Scroll selected suggestion into view
   useEffect(() => {
@@ -176,7 +201,7 @@ const Terminal = () => {
     const currentDir = getDirContent(currentPath);
 
     if (cmd === 'help') {
-      response = "Available commands:\n  ls [dir]      - List contents\n  cd [dir]      - Change directory\n  clear         - Clear terminal\n  exit          - Close terminal\n  [name]        - Run app or open file\n\nGames:\n  snake         - Play Snake\n  2048          - Play 2048 puzzle\n  tictactoe     - Play Tic-Tac-Toe\n  maze          - Play Maze Runner\n\nTip: Use 'Tab' for auto-completion. Press 'ESC' to exit games.";
+      response = "Available commands:\n  ls [dir]      - List contents\n  cd [dir]      - Change directory\n  clear         - Clear terminal\n  whoami        - Display user info\n  theme [name]  - Change OS theme\n  exit          - Close terminal\n  [name]        - Run app or open file\n\nGames:\n  snake         - Play Snake\n  2048          - Play 2048 puzzle\n  tictactoe     - Play Tic-Tac-Toe\n  maze          - Play Maze Runner\n\nTip: Use 'Tab' for auto-completion. Press 'ESC' to exit games.";
     }
     else if (cmd === 'ls') {
       let targetDir = currentDir;
@@ -233,7 +258,16 @@ const Terminal = () => {
       }
     }
     else if (cmd === 'whoami') {
-      response = "Abhinav Sharma - Full Stack Engineer";
+      response = "Abhinav Sharma - Software Engineer\nFull Stack Developer | AI Enthusiast";
+    }
+    else if (cmd === 'theme') {
+      const themeName = args.trim();
+      if (themeName && THEMES[themeName]) {
+        updateOSTheme(themeName);
+        response = `Theme changed to: ${THEMES[themeName].name}`;
+      } else {
+        response = 'Available themes: ' + Object.keys(THEMES).join(', ');
+      }
     }
     // Game Commands
     else if (cmd === 'snake') {
@@ -298,25 +332,25 @@ const Terminal = () => {
       }
       if (e.key === 'Enter' || e.key === 'Tab') {
         e.preventDefault();
-        if (suggestionIndex !== -1) {
-          const selected = activeSuggestions[suggestionIndex];
-          // Determine how to append. 
-          // Simple logic: replace the last word or the whole query part
-          const parts = input.split(' ');
-          if (parts.length > 1) {
-            // e.g. "cd pro" -> "cd projects/"
-            parts.pop();
-            const suffix = selected.endsWith('/') ? selected : selected + " ";
-            setInput(parts.join(' ') + " " + suffix);
-          } else {
-            // e.g. "pro" -> "projects/"
-            const suffix = selected.endsWith('/') ? selected : selected + " ";
-            setInput(suffix);
-          }
-          setActiveSuggestions([]);
-          setSuggestionIndex(-1);
-          setGhostSuggestion("");
+        // If no suggestion is selected, use the first one
+        const selectedIndex = suggestionIndex !== -1 ? suggestionIndex : 0;
+        const selected = activeSuggestions[selectedIndex];
+        // Determine how to append. 
+        // Simple logic: replace the last word or the whole query part
+        const parts = input.split(' ');
+        if (parts.length > 1) {
+          // e.g. "cd pro" -> "cd projects/"
+          parts.pop();
+          const suffix = selected.endsWith('/') ? selected : selected + " ";
+          setInput(parts.join(' ') + " " + suffix);
+        } else {
+          // e.g. "pro" -> "projects/"
+          const suffix = selected.endsWith('/') ? selected : selected + " ";
+          setInput(suffix);
         }
+        setActiveSuggestions([]);
+        setSuggestionIndex(-1);
+        setGhostSuggestion("");
         return;
       }
       if (e.key === 'Escape') {
@@ -423,8 +457,47 @@ const Terminal = () => {
   // }
 
   const handleInputChange = (e) => {
-    setInput(e.target.value);
-    if (activeSuggestions.length > 0) {
+    const newValue = e.target.value;
+    setInput(newValue);
+
+    // Update suggestions dynamically as user types
+    if (newValue.trim()) {
+      const lowerInput = newValue.toLowerCase();
+      const currentDir = getDirContent(currentPath);
+      const currentItems = currentDir ? Object.keys(currentDir) : [];
+
+      let matches = [];
+
+      // Check if it's a command with space (like "cd ")
+      if (lowerInput.includes(' ')) {
+        const parts = lowerInput.split(' ');
+        const cmd = parts[0];
+        const query = parts.slice(1).join(' ');
+
+        if (cmd === 'cd') {
+          const dirs = currentItems.filter(k => currentDir[k].type === 'dir');
+          matches = dirs.filter(d => d.startsWith(query)).map(d => `${d}/`);
+        } else if (cmd === 'ls') {
+          matches = currentItems.filter(i => i.startsWith(query)).map(i => currentDir[i].type === 'dir' ? `${i}/` : i);
+        }
+      } else {
+        // No space - match commands or items
+        const allPossibilities = [...commands, ...currentItems];
+        matches = allPossibilities.filter(item => item.startsWith(lowerInput)).map(i => {
+          if (currentItems.includes(i) && currentDir[i].type === 'dir') return `${i}/`;
+          return i;
+        });
+      }
+
+      if (matches.length > 0) {
+        setActiveSuggestions(matches);
+        setSuggestionIndex(-1);
+      } else {
+        setActiveSuggestions([]);
+        setSuggestionIndex(-1);
+      }
+    } else {
+      // Clear suggestions if input is empty
       setActiveSuggestions([]);
       setSuggestionIndex(-1);
     }
@@ -449,7 +522,14 @@ const Terminal = () => {
     <div
       className="terminal-window"
       ref={terminalRef}
-      onClick={() => inputRef.current?.focus()}
+      onClick={(e) => {
+        // Clear suggestions if clicking outside the autocomplete menu
+        if (!e.target.closest('.autocomplete-menu')) {
+          setActiveSuggestions([]);
+          setSuggestionIndex(-1);
+        }
+        inputRef.current?.focus();
+      }}
     >
       <div className="terminal-content">
         {history.map((item, index) => (
@@ -482,7 +562,7 @@ const Terminal = () => {
             {/* Ghost Suggestion Overlay */}
             {ghostSuggestion && (
               <div className="ghost-suggestion">
-                {input}{ghostSuggestion.slice(input.length)}
+                {input + ghostSuggestion}
               </div>
             )}
           </div>
@@ -495,9 +575,10 @@ const Terminal = () => {
         <div
           className={`autocomplete-menu ${menuAbove ? 'menu-above' : 'menu-below'}`}
           style={{
-            left: '10px', // Fixed position relative to terminal
-            bottom: menuAbove ? '60px' : 'auto',
-            top: menuAbove ? 'auto' : 'calc(100% - 40px)'
+            left: `${menuPosition.left}px`,
+            top: `${menuPosition.top}px`,
+            bottom: 'auto',
+            transform: menuPosition.above ? 'translateY(-100%)' : 'none'
           }}
         >
           {activeSuggestions.map((suggestion, index) => (

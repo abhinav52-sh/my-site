@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { fileSystem } from '../data/filesystem';
 import { systemSounds } from '../utils/sounds';
+import { THEMES } from '../data/themes';
+import { trackAppOpen, trackThemeChange } from '../utils/analytics';
 
 const OSContext = createContext();
 
@@ -15,14 +17,26 @@ export const OSProvider = ({ children }) => {
   // NEW: Desktop Icon Positions State
   const [desktopIcons, setDesktopIcons] = useState([]);
 
-  // Initialize Icons in a column layout
+  // Initialize Icons in a column layout (Dynamic Grid)
   useEffect(() => {
-    const keys = ['about', 'projects', 'skills', 'contact', 'terminal', 'settings'];
-    const initialIcons = keys.map((key, index) => ({
-      id: key,
-      x: 20, // Left margin
-      y: 20 + (index * 110) // Stack vertically with 110px spacing
-    }));
+    // Filter apps that should be on desktop
+    const desktopApps = Object.keys(fileSystem).filter(key => fileSystem[key].desktop);
+
+    const startX = 20;
+    const startY = 20;
+    const spacingY = 110;
+    const spacingX = 100;
+    const maxPerColumn = Math.floor((window.innerHeight - 60) / spacingY); // -60 for taskbar/margin
+
+    const initialIcons = desktopApps.map((key, index) => {
+      const col = Math.floor(index / maxPerColumn);
+      const row = index % maxPerColumn;
+      return {
+        id: key,
+        x: startX + (col * spacingX),
+        y: startY + (row * spacingY)
+      };
+    });
     setDesktopIcons(initialIcons);
   }, []);
 
@@ -35,12 +49,23 @@ export const OSProvider = ({ children }) => {
 
   // NEW: Auto Arrange (Reset) Function
   const resetIcons = () => {
-    const keys = ['about', 'projects', 'skills', 'contact', 'terminal', 'settings'];
-    const resetState = keys.map((key, index) => ({
-      id: key,
-      x: 20,
-      y: 20 + (index * 110)
-    }));
+    const desktopApps = Object.keys(fileSystem).filter(key => fileSystem[key].desktop);
+
+    const startX = 20;
+    const startY = 20;
+    const spacingY = 110;
+    const spacingX = 100;
+    const maxPerColumn = Math.floor((window.innerHeight - 60) / spacingY);
+
+    const resetState = desktopApps.map((key, index) => {
+      const col = Math.floor(index / maxPerColumn);
+      const row = index % maxPerColumn;
+      return {
+        id: key,
+        x: startX + (col * spacingX),
+        y: startY + (row * spacingY)
+      };
+    });
     setDesktopIcons(resetState);
   };
 
@@ -77,6 +102,9 @@ export const OSProvider = ({ children }) => {
     setWindows([...windows, newWindow]);
     setZCounter(zCounter + 1);
     setActiveId(appId);
+
+    // Track app open
+    trackAppOpen(appId, appData.title);
 
     // Play open sound
     if (soundEnabled) {
@@ -194,7 +222,7 @@ export const OSProvider = ({ children }) => {
     return saved ? JSON.parse(saved) : {
       accentColor: '#3daee9',
       iconTheme: 'default',
-      windowOpacity: 0.95,
+      windowOpacity: 0.95, // Default to 95% opacity
       fontSize: 'medium',
       retroMode: false
     };
@@ -209,6 +237,9 @@ export const OSProvider = ({ children }) => {
   const updateOSTheme = (themeName) => {
     setOSTheme(themeName);
     localStorage.setItem('osTheme', themeName);
+
+    // Track theme change
+    trackThemeChange(themeName);
   };
 
   // NEW: Particle Effects Toggle
@@ -245,13 +276,6 @@ export const OSProvider = ({ children }) => {
 
   // Apply OS theme colors as CSS variables
   useEffect(() => {
-    const THEMES = {
-      default: { bg: '#0a0a0a', cardBg: 'rgba(26, 26, 26, 0.8)', accent: '#3daee9', text: '#eee', particleColor: '#3daee9' },
-      cyberpunk: { bg: '#0d0221', cardBg: 'rgba(13, 2, 33, 0.8)', accent: '#ff006e', text: '#00f5ff', particleColor: '#ff006e' },
-      terminal: { bg: '#000000', cardBg: 'rgba(0, 20, 0, 0.9)', accent: '#00ff00', text: '#00ff00', particleColor: '#00ff00' },
-      sunset: { bg: '#1a1a2e', cardBg: 'rgba(26, 26, 46, 0.8)', accent: '#ff6b6b', text: '#f0e7d8', particleColor: '#ff6b6b' }
-    };
-
     const currentTheme = THEMES[osTheme] || THEMES.default;
 
     // Apply theme colors to CSS variables

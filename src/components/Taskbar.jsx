@@ -18,11 +18,8 @@ const Taskbar = () => {
   const startRef = useRef(null);
   const buttonRef = useRef(null);
 
-  // App List for Start Menu
-  const allApps = [
-    'about', 'projects', 'skills', 'contact', 'terminal', 'settings',
-    'proj_helmet', 'proj_capstone', 'proj_robot', 'proj_dev'
-  ];
+  // App List for Start Menu (Dynamic)
+  const allApps = Object.keys(fileSystem).filter(key => fileSystem[key].startMenu);
 
   // Get time-based greeting
   const getGreeting = () => {

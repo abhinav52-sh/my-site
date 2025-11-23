@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useOS } from '../../context/OSContext';
+import { fileSystem } from '../../data/filesystem';
 
 const FileExplorer = () => {
   const { openApp, hiddenApps, openProperties } = useOS();
@@ -8,13 +9,21 @@ const FileExplorer = () => {
   const [currentPath, setCurrentPath] = useState('projects');
   const [contextMenu, setContextMenu] = useState({ show: false, x: 0, y: 0, itemId: null });
 
+  // Helper to get items by category
+  const getItemsByCategory = (category) => {
+    return Object.keys(fileSystem)
+      .filter(key => fileSystem[key].category === category)
+      .map(key => ({
+        id: key,
+        label: fileSystem[key].title,
+        icon: category === 'games' ? 'game' : 'app',
+        action: () => openApp(key)
+      }));
+  };
+
   const contents = {
-    projects: [
-      { id: 'proj_helmet', label: 'Smart_Helmet', icon: 'app', action: () => openApp('proj_helmet') },
-      { id: 'proj_capstone', label: 'DiscountMate', icon: 'app', action: () => openApp('proj_capstone') },
-      { id: 'proj_robot', label: 'Robot_Ctrl', icon: 'app', action: () => openApp('proj_robot') },
-      { id: 'proj_dev', label: 'DevDeakin', icon: 'app', action: () => openApp('proj_dev') },
-    ],
+    projects: getItemsByCategory('projects'),
+    games: getItemsByCategory('games'),
     docs: [
       {
         id: 'resume', label: 'Resume.pdf', icon: 'pdf', action: () => {
@@ -26,12 +35,6 @@ const FileExplorer = () => {
       },
       { id: 'about', label: 'About Me', icon: 'app', action: () => openApp('about') },
       { id: 'contact', label: 'Contact Info', icon: 'app', action: () => openApp('contact') },
-    ],
-    games: [
-      { id: 'game_snake', label: 'Snake', icon: 'game', action: () => openApp('game_snake') },
-      { id: 'game_2048', label: '2048', icon: 'game', action: () => openApp('game_2048') },
-      { id: 'game_tictactoe', label: 'TicTacToe', icon: 'game', action: () => openApp('game_tictactoe') },
-      { id: 'game_maze', label: 'Maze', icon: 'game', action: () => openApp('game_maze') },
     ]
   };
 
@@ -59,9 +62,9 @@ const FileExplorer = () => {
   };
 
   return (
-    <div style={{ display: 'flex', height: '100%' }} onClick={handleCloseMenu}>
+    <div style={{ display: 'flex', height: '100%', background: 'transparent' }} onClick={handleCloseMenu}>
       {/* Sidebar */}
-      <div style={{ width: '160px', background: 'var(--os-theme-card-bg, rgba(0,0,0,0.2))', padding: '15px', borderRight: '1px solid rgba(255,255,255,0.05)', fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '5px', transition: 'background 0.5s ease' }}>
+      <div style={{ width: '160px', background: 'var(--os-theme-card-bg)', padding: '15px', borderRight: '1px solid rgba(255,255,255,0.05)', fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '5px', transition: 'background 0.5s ease' }}>
         <div style={{ color: '#666', marginBottom: '5px', fontWeight: 700, fontSize: '11px' }}>LOCATIONS</div>
 
         {/* Removed Home Sidebar Item */}
@@ -74,7 +77,7 @@ const FileExplorer = () => {
       </div>
 
       {/* Main Content */}
-      <div style={{ flexGrow: 1, padding: '20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))', gap: '15px', alignContent: 'start', color: 'var(--os-theme-text, #fff)', transition: 'color 0.5s ease' }}>
+      <div style={{ flexGrow: 1, padding: '20px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))', gap: '15px', alignContent: 'start', color: 'var(--os-theme-text)', transition: 'color 0.5s ease' }}>
         {contents[currentPath] && contents[currentPath]
           .filter(item => !hiddenApps.includes(item.id))
           .map(item => (

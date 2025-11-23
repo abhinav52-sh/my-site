@@ -193,9 +193,9 @@ const Game2048 = () => {
       flexDirection: 'column',
       alignItems: 'center',
       padding: '20px',
-      background: '#faf8ef',
+      background: 'transparent',
       height: '100%',
-      color: '#776e65'
+      color: 'var(--os-theme-text)'
     }}>
       <div style={{
         marginBottom: '20px',
@@ -204,7 +204,7 @@ const Game2048 = () => {
         fontSize: '16px',
         fontWeight: 'bold'
       }}>
-        <div>Score: <span style={{ color: '#3daee9' }}>{score}</span></div>
+        <div>Score: <span style={{ color: 'var(--os-theme-accent)' }}>{score}</span></div>
         <div>Best: <span style={{ color: '#f1c40f' }}>{highScore}</span></div>
       </div>
 
@@ -213,7 +213,7 @@ const Game2048 = () => {
         gridTemplateColumns: 'repeat(4, 80px)',
         gridTemplateRows: 'repeat(4, 80px)',
         gap: '10px',
-        background: '#bbada0',
+        background: 'var(--os-theme-card-bg)',
         padding: '10px',
         borderRadius: '8px',
         marginBottom: '20px'
@@ -275,8 +275,8 @@ const Game2048 = () => {
 
 const buttonStyle = {
   padding: '10px 20px',
-  background: '#8f7a66',
-  color: '#f9f6f2',
+  background: 'var(--os-theme-accent)',
+  color: '#fff',
   border: 'none',
   borderRadius: '6px',
   cursor: 'pointer',

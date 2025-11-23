@@ -8,6 +8,8 @@ import ParticleEffect from './components/ParticleEffect';
 import SnapPreview from './components/SnapPreview';
 import ParticleBackground from './components/ParticleBackground';
 
+import { OS_CONFIG } from './data/config';
+
 const OSInterface = () => {
   const {
     windows,
@@ -48,14 +50,17 @@ const OSInterface = () => {
   }, [windows, viewedProjects]);
 
   useEffect(() => {
-    setTimeout(() => setBooting(false), 2000);
+    setTimeout(() => setBooting(false), OS_CONFIG.boot.loadingScreenDuration);
   }, []);
 
-  // Track openApp reference to avoid stale closures in timeout
+  // Track openApp/maximizeApp reference to avoid stale closures in timeout
   const openAppRef = useRef(openApp);
+  const maximizeAppRef = useRef(maximizeApp);
+
   useEffect(() => {
     openAppRef.current = openApp;
-  }, [openApp]);
+    maximizeAppRef.current = maximizeApp;
+  }, [openApp, maximizeApp]);
 
   const hasScheduledLaunch = useRef(false);
 
@@ -65,7 +70,12 @@ const OSInterface = () => {
       hasScheduledLaunch.current = true;
       const timer = setTimeout(() => {
         openAppRef.current('about');
-      }, 1000);
+
+        // Maximize after delay
+        setTimeout(() => {
+          maximizeAppRef.current('about');
+        }, OS_CONFIG.boot.autoMaximizeDelay);
+      }, OS_CONFIG.boot.autoLaunchDelay);
       return () => clearTimeout(timer);
     }
   }, [booting]);
@@ -108,6 +118,7 @@ const OSInterface = () => {
       if (appId) {
         options = [
           { label: 'Open', icon: '🚀', action: () => openApp(appId) },
+          { label: 'Center Window', icon: '⊡', action: () => centerApp(appId) }, // Added Center Window
           { separator: true },
           { label: 'Properties', icon: 'ℹ️', action: () => openProperties(appId) }
         ];

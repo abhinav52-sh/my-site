@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { useOS } from '../context/OSContext';
 
-const ParticleBackground = () => {
+const ParticleBackground = ({ absolute = false, diffused = false }) => {
   const { particlesEnabled } = useOS();
   const canvasRef = useRef(null);
   const particlesRef = useRef([]);
@@ -9,7 +9,6 @@ const ParticleBackground = () => {
 
   useEffect(() => {
     if (!particlesEnabled) {
-      // Clear canvas if particles are disabled
       if (canvasRef.current) {
         const ctx = canvasRef.current.getContext('2d');
         ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
@@ -24,13 +23,6 @@ const ParticleBackground = () => {
     if (!canvas) return;
 
     const ctx = canvas.getContext('2d');
-
-    const updateCanvasSize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
-
-    updateCanvasSize();
 
     // Get particle color from CSS variable
     const getParticleColor = () => {
@@ -65,8 +57,34 @@ const ParticleBackground = () => {
       }
     }
 
-    // Initialize particles (30 for full desktop)
-    particlesRef.current = Array.from({ length: 30 }, () => new Particle());
+    // Initialize particles (adjust count based on size/density)
+    const initParticles = () => {
+      // Calculate density: 1 particle per ~20000px^2 (reduced density)
+      // Base count for small windows, scale up for larger ones
+      const area = canvas.width * canvas.height;
+      const density = 20000;
+      const calculatedCount = Math.floor(area / density);
+
+      // Clamp count: min 20, max 150 to prevent performance issues
+      const particleCount = Math.max(20, Math.min(150, calculatedCount));
+
+      particlesRef.current = Array.from({ length: particleCount }, () => new Particle());
+    };
+
+    const updateCanvasSize = () => {
+      // If absolute, use parent dimensions, otherwise window
+      if (absolute && canvas.parentElement) {
+        canvas.width = canvas.parentElement.clientWidth;
+        canvas.height = canvas.parentElement.clientHeight;
+      } else {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+      // Re-initialize particles to fill new size
+      initParticles();
+    };
+
+    updateCanvasSize();
 
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -106,15 +124,29 @@ const ParticleBackground = () => {
       updateCanvasSize();
     };
 
-    window.addEventListener('resize', handleResize);
+    // Use ResizeObserver for absolute positioning (windows)
+    let resizeObserver;
+    if (absolute && canvas.parentElement) {
+      resizeObserver = new ResizeObserver(() => {
+        // Request animation frame to ensure we update after layout changes
+        requestAnimationFrame(updateCanvasSize);
+      });
+      resizeObserver.observe(canvas.parentElement);
+    } else {
+      window.addEventListener('resize', handleResize);
+    }
 
     return () => {
-      window.removeEventListener('resize', handleResize);
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      } else {
+        window.removeEventListener('resize', handleResize);
+      }
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [particlesEnabled]);
+  }, [particlesEnabled, absolute]);
 
   if (!particlesEnabled) return null;
 
@@ -122,13 +154,14 @@ const ParticleBackground = () => {
     <canvas
       ref={canvasRef}
       style={{
-        position: 'fixed',
+        position: absolute ? 'absolute' : 'fixed',
         top: 0,
         left: 0,
         width: '100%',
         height: '100%',
         pointerEvents: 'none',
-        zIndex: 0
+        zIndex: absolute ? -1 : 0,
+        filter: diffused ? 'blur(3px)' : 'none'
       }}
     />
   );

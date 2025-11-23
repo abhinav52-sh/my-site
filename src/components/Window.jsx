@@ -12,6 +12,7 @@ import SnakeGame from './games/SnakeGame';
 import Game2048 from './games/Game2048';
 import TicTacToe from './games/TicTacToe';
 import MazeGame from './games/MazeGame';
+import TetrisGame from './games/TetrisGame';
 
 const ResizeHandle = ({ cursor, top, bottom, left, right, width, height, onMouseDown }) => (
   <div
@@ -52,8 +53,10 @@ const ControlBtn = ({ onClick, icon, color, isClose, title }) => (
   </div>
 );
 
+import { THEMES } from '../data/themes';
+
 const Window = ({ win }) => {
-  const { windows, focusApp, closeApp, minimizeApp, maximizeApp, activeId, themeConfig, soundEnabled, snapState, setSnapState } = useOS();
+  const { windows, focusApp, closeApp, minimizeApp, maximizeApp, activeId, themeConfig, soundEnabled, snapState, setSnapState, osTheme } = useOS();
   const [pos, setPos] = useState({ x: win.x, y: win.y, w: win.width, h: win.height });
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
@@ -64,6 +67,26 @@ const Window = ({ win }) => {
   const [animationType, setAnimationType] = useState(''); // 'minimize', 'maximize', 'close'
 
   const dragOffset = useRef({ x: 0, y: 0, w: 0, h: 0, startX: 0, startY: 0 });
+
+  // Helper to convert hex to rgba with opacity
+  const getThemeBackground = (opacity) => {
+    const currentTheme = THEMES[osTheme] || THEMES.default;
+    const hex = currentTheme.bg;
+
+    // Parse hex
+    let r = 0, g = 0, b = 0;
+    if (hex.length === 4) {
+      r = parseInt(hex[1] + hex[1], 16);
+      g = parseInt(hex[2] + hex[2], 16);
+      b = parseInt(hex[3] + hex[3], 16);
+    } else if (hex.length === 7) {
+      r = parseInt(hex.substring(1, 3), 16);
+      g = parseInt(hex.substring(3, 5), 16);
+      b = parseInt(hex.substring(5, 7), 16);
+    }
+
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  };
 
   const focusWindow = (e) => {
     e.stopPropagation();
@@ -117,30 +140,20 @@ const Window = ({ win }) => {
       // 1. Calculate Ratio: Where is the mouse on the header? (0.0 to 1.0)
       const clickRatio = e.clientX / window.innerWidth;
 
-      // 2. Calculate "Restored" Target Position based on that ratio
-      // This keeps the window under the mouse visually
-      const targetX = e.clientX - (pos.w * clickRatio);
-      const targetY = e.clientY - 15; // Slight buffer from top
-
-      // 3. Update Local State to Restored Size immediately
-      setPos(prev => ({ ...prev, x: targetX, y: targetY }));
-
-      // 4. Trigger Global Restore
-      maximizeApp(win.id);
-
-      // 5. Set Snapping State:
-      // We want width/height to animate (morph), but X/Y to follow mouse instantly.
-      setIsSnapping(true);
+      // 2. Prepare for potential drag (don't restore yet)
       setIsDragging(true);
 
-      // 6. Set Drag Offset
-      dragOffset.current = { x: pos.w * clickRatio, y: 15 };
+      // Store start position and ratio for the threshold check
+      dragOffset.current = {
+        startX: e.clientX,
+        startY: e.clientY,
+        clickRatio: clickRatio,
+        isMaximizedDrag: true // Flag to indicate we are starting from maximized state
+      };
 
-      // Reset snapping flag shortly after animation starts so standard drag takes over
-      setTimeout(() => setIsSnapping(false), 50);
     } else {
       setIsDragging(true);
-      dragOffset.current = { x: e.clientX - pos.x, y: e.clientY - pos.y };
+      dragOffset.current = { x: e.clientX - pos.x, y: e.clientY - pos.y, isMaximizedDrag: false };
     }
   };
 
@@ -165,6 +178,32 @@ const Window = ({ win }) => {
   useEffect(() => {
     const handleMouseMove = (e) => {
       if (isDragging) {
+        // CHECK FOR MAXIMIZED DRAG THRESHOLD
+        if (dragOffset.current.isMaximizedDrag) {
+          const dist = Math.hypot(e.clientX - dragOffset.current.startX, e.clientY - dragOffset.current.startY);
+
+          if (dist > 15) { // Threshold of 15px
+            // Trigger Restore
+            const clickRatio = dragOffset.current.clickRatio;
+            const targetX = e.clientX - (pos.w * clickRatio);
+            const targetY = e.clientY - 15;
+
+            setPos(prev => ({ ...prev, x: targetX, y: targetY }));
+            maximizeApp(win.id);
+            setIsSnapping(true);
+
+            // Switch to normal drag mode
+            dragOffset.current.isMaximizedDrag = false;
+            dragOffset.current.x = pos.w * clickRatio;
+            dragOffset.current.y = 15;
+
+            setTimeout(() => setIsSnapping(false), 50);
+          } else {
+            // Haven't moved enough yet
+            return;
+          }
+        }
+
         const newX = e.clientX - dragOffset.current.x;
         const newY = Math.max(0, e.clientY - dragOffset.current.y);
 
@@ -357,6 +396,8 @@ const Window = ({ win }) => {
         return <TicTacToe />;
       case 'game_maze':
         return <MazeGame />;
+      case 'game_tetris':
+        return <TetrisGame />;
       default:
         return win.content;
     }
@@ -384,7 +425,7 @@ const Window = ({ win }) => {
         border: '1px solid var(--glass-border)',
         boxShadow: '0 25px 50px rgba(0,0,0,0.5)',
         overflow: 'hidden',
-        background: `rgba(28, 28, 30, ${themeConfig.windowOpacity || 0.95})`,
+        background: getThemeBackground(themeConfig.windowOpacity || 0.95),
         backdropFilter: 'blur(20px)',
         transition: 'none'
       };
@@ -414,7 +455,7 @@ const Window = ({ win }) => {
       className={`window window-opening ${isAnimating ? `window-${animationType}` : ''}`}
       style={{
         position: 'absolute',
-        background: `rgba(28, 28, 30, ${themeConfig.windowOpacity || 0.95})`,
+        background: getThemeBackground(themeConfig.windowOpacity || 0.95),
         backdropFilter: 'blur(20px)',
         boxShadow: '0 30px 60px rgba(0,0,0,0.5)',
         display: win.minimized && !isAnimating ? 'none' : 'flex',
@@ -425,6 +466,7 @@ const Window = ({ win }) => {
         ...getStyles()
       }}
       onMouseDown={() => focusApp(win.id)}
+      onClick={focusWindow}
       data-context="window"
       data-id={win.id}
     >

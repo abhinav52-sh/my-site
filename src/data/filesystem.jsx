@@ -18,47 +18,62 @@ const ProjectLayout = ({ img, title, date, desc, stack }) => (
 export const fileSystem = {
   about: {
     title: "User Profile",
-    // Bright 3D Avatar
     icon: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
     width: 450,
     height: 600,
-    type: "profile"
+    type: "profile",
+    category: "system",
+    desktop: true,
+    startMenu: true,
+    pinned: true
   },
 
   contact: {
     title: "Contact Me",
-    // Bright Blue/White Mail Icon
     icon: "https://img.icons8.com/fluency/96/mail.png",
     width: 400,
     height: 500,
-    type: "contact"
+    type: "contact",
+    category: "system",
+    desktop: true,
+    startMenu: true,
+    pinned: true
   },
 
   skills: {
     title: "System Monitor",
-    // Bright Screen with Speedometer/Graph
     icon: "https://img.icons8.com/fluency/96/performance-macbook.png",
     width: 600,
     height: 450,
-    type: "monitor"
+    type: "monitor",
+    category: "system",
+    desktop: true,
+    startMenu: true,
+    pinned: true
   },
 
   projects: {
     title: "File Manager",
-    // Distinct Blue Folder
     icon: "https://img.icons8.com/fluency/96/folder-invoices.png",
     width: 700,
     height: 450,
-    type: "explorer"
+    type: "explorer",
+    category: "system",
+    desktop: true,
+    startMenu: true,
+    pinned: true
   },
 
   terminal: {
     title: "Terminal",
-    // High Contrast Command Prompt
     icon: "https://img.icons8.com/fluency/96/console.png",
     width: 600,
     height: 350,
-    type: "terminal"
+    type: "terminal",
+    category: "system",
+    desktop: true,
+    startMenu: true,
+    pinned: true
   },
 
   properties: {
@@ -66,7 +81,11 @@ export const fileSystem = {
     icon: "https://cdn-icons-png.flaticon.com/512/3767/3767084.png",
     width: 350,
     height: 450,
-    type: "properties"
+    type: "properties",
+    category: "system",
+    desktop: false,
+    startMenu: false,
+    pinned: false
   },
 
   settings: {
@@ -74,7 +93,11 @@ export const fileSystem = {
     icon: "https://img.icons8.com/fluency/96/settings.png",
     width: 700,
     height: 500,
-    type: "settings"
+    type: "settings",
+    category: "system",
+    desktop: true,
+    startMenu: true,
+    pinned: true
   },
 
   // --- Games ---
@@ -83,36 +106,67 @@ export const fileSystem = {
     icon: "https://cdn-icons-png.flaticon.com/512/528/528076.png",
     width: 600,
     height: 500,
-    type: "game_snake"
+    type: "game_snake",
+    category: "games",
+    desktop: false,
+    startMenu: true,
+    pinned: true
   },
   game_2048: {
     title: "2048",
     icon: "https://cdn-icons-png.flaticon.com/512/3064/3064155.png",
     width: 500,
     height: 600,
-    type: "game_2048"
+    type: "game_2048",
+    category: "games",
+    desktop: false,
+    startMenu: true,
+    pinned: true
   },
   game_tictactoe: {
     title: "Tic Tac Toe",
     icon: "https://cdn-icons-png.flaticon.com/512/393/393060.png",
     width: 400,
     height: 500,
-    type: "game_tictactoe"
+    type: "game_tictactoe",
+    category: "games",
+    desktop: false,
+    startMenu: true,
+    pinned: true
   },
   game_maze: {
     title: "Maze Runner",
     icon: "https://cdn-icons-png.flaticon.com/512/2541/2541991.png",
     width: 600,
     height: 500,
-    type: "game_maze"
+    type: "game_maze",
+    category: "games",
+    desktop: false,
+    startMenu: true,
+    pinned: true
+  },
+  game_tetris: {
+    title: "Tetris",
+    icon: "https://cdn-icons-png.flaticon.com/512/566/566312.png",
+    width: 500,
+    height: 650,
+    type: "game_tetris",
+    category: "games",
+    desktop: false,
+    startMenu: true,
+    pinned: true
   },
 
   // --- Projects ---
   proj_helmet: {
     title: "Smart Helmet",
-    icon: "https://cdn-icons-png.flaticon.com/512/1087/1087815.png", // Kept file icons simple
+    icon: "https://cdn-icons-png.flaticon.com/512/1087/1087815.png",
     width: 450,
     height: 500,
+    category: "projects",
+    desktop: false,
+    startMenu: true,
+    pinned: false,
     content: (
       <ProjectLayout
         img="https://images.unsplash.com/photo-1558346490-a72e53ae2d4f?q=80&w=1000&auto=format&fit=crop"
@@ -128,6 +182,10 @@ export const fileSystem = {
     icon: "https://cdn-icons-png.flaticon.com/512/1087/1087815.png",
     width: 450,
     height: 500,
+    category: "projects",
+    desktop: false,
+    startMenu: true,
+    pinned: false,
     content: (
       <ProjectLayout
         img="https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=1000&auto=format&fit=crop"
@@ -143,6 +201,10 @@ export const fileSystem = {
     icon: "https://cdn-icons-png.flaticon.com/512/1087/1087815.png",
     width: 450,
     height: 500,
+    category: "projects",
+    desktop: false,
+    startMenu: true,
+    pinned: false,
     content: (
       <ProjectLayout
         img="https://images.unsplash.com/photo-1485827404703-89b55fcc595e?q=80&w=1000&auto=format&fit=crop"
@@ -158,6 +220,10 @@ export const fileSystem = {
     icon: "https://cdn-icons-png.flaticon.com/512/1087/1087815.png",
     width: 450,
     height: 500,
+    category: "projects",
+    desktop: false,
+    startMenu: true,
+    pinned: false,
     content: (
       <ProjectLayout
         img="https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1000&auto=format&fit=crop"

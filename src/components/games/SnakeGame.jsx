@@ -143,9 +143,9 @@ const SnakeGame = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px', background: '#0a0a0a', height: '100%' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px', background: 'transparent', height: '100%', color: 'var(--os-theme-text)' }}>
       <div style={{ marginBottom: '15px', display: 'flex', gap: '20px', fontSize: '14px' }}>
-        <div>Score: <span style={{ color: '#3daee9', fontWeight: 'bold' }}>{score}</span></div>
+        <div>Score: <span style={{ color: 'var(--os-theme-accent)', fontWeight: 'bold' }}>{score}</span></div>
         <div>High Score: <span style={{ color: '#f1c40f', fontWeight: 'bold' }}>{highScore}</span></div>
       </div>
 
@@ -153,7 +153,7 @@ const SnakeGame = () => {
         ref={canvasRef}
         width={400}
         height={400}
-        style={{ border: '2px solid #333', borderRadius: '4px' }}
+        style={{ border: '2px solid #333', borderRadius: '4px', background: 'rgba(0,0,0,0.5)' }}
       />
 
       <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
@@ -186,7 +186,7 @@ const SnakeGame = () => {
 
 const buttonStyle = {
   padding: '8px 16px',
-  background: '#3daee9',
+  background: 'var(--os-theme-accent)',
   color: '#000',
   border: 'none',
   borderRadius: '4px',

@@ -8,10 +8,8 @@ const StartMenu = forwardRef(({ isOpen, onClose, toggleLogout }, ref) => {
   const [activeTab, setActiveTab] = useState('pinned'); // 'pinned' or 'all'
 
   // App List
-  const pinnedApps = [
-    'about', 'projects', 'skills', 'contact', 'terminal', 'settings',
-    'game_snake', 'game_2048', 'game_tictactoe', 'game_maze'
-  ];
+  // App List (Dynamic Pinned)
+  const pinnedApps = Object.keys(fileSystem).filter(key => fileSystem[key].pinned);
 
   const allApps = Object.keys(fileSystem).filter(key =>
     fileSystem[key].type && fileSystem[key].type !== 'properties'
